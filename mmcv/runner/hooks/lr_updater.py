@@ -180,3 +180,26 @@ class CosineLrUpdaterHook(LrUpdaterHook):
             max_progress = runner.max_iters
         return self.target_lr + 0.5 * (base_lr - self.target_lr) * \
             (1 + cos(pi * (progress / max_progress)))
+
+
+class RestartLrUpdaterHook(LrUpdaterHook):
+
+    def __init__(self, target_lr=0, cycle_len=1, **kwargs):
+        self.target_lr = target_lr
+        self.epoch_cycle_len = cycle_len
+        super(RestartLrUpdaterHook, self).__init__(**kwargs)
+
+    def get_lr(self, runner, base_lr):
+        assert not self.by_epoch
+
+        epoch_iters = runner.max_iters / runner.max_epochs
+        cycle_len = self.epoch_cycle_len * epoch_iters
+        cur_iter = runner.iter
+
+        return self.target_lr + ((base_lr - self.target_lr) / 2) * (
+                cos(
+                    pi *
+                    (cur_iter % cycle_len) /
+                    cycle_len
+                ) + 1
+            )
